@@ -43,14 +43,18 @@ export default function App() {
       )}
 
       {state.phase === 'result' && state.lastRound && (
-        <ResultScreen playerArms={state.playerArms} aiArms={state.aiArms} round={state.lastRound} />
+        <ResultScreen
+          playerArms={state.playerArms}
+          aiArms={state.aiArms}
+          round={state.lastRound}
+          onNext={() => dispatch({ type: state.matchWinner ? 'GO_MATCH_END' : 'NEXT_ROUND' })}
+        />
       )}
 
       {state.phase === 'matchEnd' && state.matchWinner && (
         <MatchEndScreen
           winner={state.matchWinner}
           winStreak={state.winStreak}
-          nextFirstCaller={state.nextFirstCaller ?? true}
           onPlayAgain={() => dispatch({ type: 'PLAY_AGAIN' })}
           onBackToTitle={() => dispatch({ type: 'BACK_TO_TITLE' })}
         />

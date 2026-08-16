@@ -36,7 +36,5 @@ export interface GameState {
   /** Session-persisted consecutive match win count for the player. */
   winStreak: number;
   matchWinner: Winner | null;
-  /** Who calls first in the next match (winner of the previous match). Null before any match has finished. */
-  nextFirstCaller: boolean | null;
   lastRound: RoundResult | null;
 }

@@ -31,7 +31,6 @@ export const initialState: GameState = {
   humanHistory: [],
   winStreak: 0,
   matchWinner: null,
-  nextFirstCaller: null,
   lastRound: null,
 };
 
@@ -55,7 +54,7 @@ function beginRound(state: GameState, callerIsPlayer: boolean): GameState {
 }
 
 function startNewMatch(state: GameState): GameState {
-  const callerIsPlayer = state.nextFirstCaller ?? Math.random() < 0.5;
+  // The player always calls first each match.
   return beginRound(
     {
       ...state,
@@ -63,7 +62,7 @@ function startNewMatch(state: GameState): GameState {
       aiArms: MAX_ARMS,
       matchWinner: null,
     },
-    callerIsPlayer
+    true
   );
 }
 
@@ -134,11 +133,9 @@ export function gameReducer(state: GameState, action: Action): GameState {
 
       let matchWinner: GameState['matchWinner'] = null;
       let winStreak = state.winStreak;
-      let nextFirstCaller = state.nextFirstCaller;
       if (playerArms === 0 || aiArms === 0) {
         matchWinner = playerArms === 0 ? 'player' : 'ai';
         winStreak = matchWinner === 'player' ? state.winStreak + 1 : 0;
-        nextFirstCaller = matchWinner === 'player';
       }
 
       return {
@@ -151,7 +148,6 @@ export function gameReducer(state: GameState, action: Action): GameState {
         lastRound,
         matchWinner,
         winStreak,
-        nextFirstCaller,
         callerIsPlayer: !state.callerIsPlayer,
       };
     }

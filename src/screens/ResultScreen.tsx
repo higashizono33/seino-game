@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { HandDisplay } from '../components/HandDisplay';
+import { PrimaryButton } from '../components/Buttons';
 import { TopBar } from '../components/TopBar';
 import { RoundResult } from '../game/types';
 import { colors } from '../theme';
@@ -9,9 +10,10 @@ interface Props {
   playerArms: number;
   aiArms: number;
   round: RoundResult;
+  onNext: () => void;
 }
 
-export function ResultScreen({ playerArms, aiArms, round }: Props) {
+export function ResultScreen({ playerArms, aiArms, round, onNext }: Props) {
   const { call, callerIsPlayer, playerThrow, aiThrow, sum, hit, playerArmsBefore, aiArmsBefore } = round;
 
   const message = hit
@@ -47,6 +49,9 @@ export function ResultScreen({ playerArms, aiArms, round }: Props) {
           </Text>
         </View>
         <Text style={styles.message}>{message}</Text>
+        <View style={styles.nextButton}>
+          <PrimaryButton label="つぎへ！" onPress={onNext} />
+        </View>
       </View>
     </View>
   );
@@ -123,5 +128,8 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.sub,
     textAlign: 'center',
+  },
+  nextButton: {
+    marginTop: 8,
   },
 });

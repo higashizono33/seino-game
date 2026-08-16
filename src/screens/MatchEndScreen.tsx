@@ -7,12 +7,11 @@ import { colors } from '../theme';
 interface Props {
   winner: Winner;
   winStreak: number;
-  nextFirstCaller: boolean;
   onPlayAgain: () => void;
   onBackToTitle: () => void;
 }
 
-export function MatchEndScreen({ winner, winStreak, nextFirstCaller, onPlayAgain, onBackToTitle }: Props) {
+export function MatchEndScreen({ winner, winStreak, onPlayAgain, onBackToTitle }: Props) {
   const isPlayerWin = winner === 'player';
 
   return (
@@ -24,7 +23,6 @@ export function MatchEndScreen({ winner, winStreak, nextFirstCaller, onPlayAgain
           <Text style={styles.streakText}>🔥 {winStreak}れんしょう中</Text>
         </View>
       )}
-      <Text style={styles.next}>つぎの せんこう：{nextFirstCaller ? 'あなた' : 'AI'}</Text>
       <View style={styles.buttons}>
         <PrimaryButton label="もういちど" onPress={onPlayAgain} />
         <PrimaryButton label="タイトルへ" onPress={onBackToTitle} variant="secondary" />
@@ -60,10 +58,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: colors.accent,
-  },
-  next: {
-    fontSize: 13,
-    color: colors.sub,
   },
   buttons: {
     marginTop: 16,

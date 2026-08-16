@@ -1,7 +1,6 @@
 export const COUNTDOWN_STEP_MS = 700;
 export const COUNTDOWN_STEPS = ['3', '2', '1', 'せーの！'];
 export const INPUT_WINDOW_MS = 1500;
-export const RESULT_DISPLAY_MS = 2200;
 
 export const HAND_CLOSED = '✊';
 export const HAND_OPEN = '👍';

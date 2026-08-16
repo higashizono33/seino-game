@@ -1,7 +1,7 @@
 import { useEffect, useReducer, useRef } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import { gameReducer, initialState } from '../game/gameReducer';
-import { COUNTDOWN_STEP_MS, COUNTDOWN_STEPS, INPUT_WINDOW_MS, RESULT_DISPLAY_MS } from '../game/constants';
+import { COUNTDOWN_STEP_MS, COUNTDOWN_STEPS, INPUT_WINDOW_MS } from '../game/constants';
 
 export function useGameEngine() {
   const [state, dispatch] = useReducer(gameReducer, initialState);
@@ -29,14 +29,6 @@ export function useGameEngine() {
     if (state.phase !== 'tapInput') return;
     const timer = setTimeout(() => dispatch({ type: 'PLAYER_THROW', n: 0 }), INPUT_WINDOW_MS);
     return () => clearTimeout(timer);
-  }, [state.phase]);
-
-  useEffect(() => {
-    if (state.phase !== 'result') return;
-    const nextAction = state.matchWinner ? 'GO_MATCH_END' : 'NEXT_ROUND';
-    const timer = setTimeout(() => dispatch({ type: nextAction }), RESULT_DISPLAY_MS);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.phase]);
 
   return { state, dispatch };
