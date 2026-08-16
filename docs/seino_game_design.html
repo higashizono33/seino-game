@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>「せーの！」ゲーム設計書</title>
+<style>
+  :root{
+    --ink:#1f2328;
+    --sub:#57606a;
+    --line:#8a94a0;
+    --paper:#fbfaf7;
+    --panel:#f0efe9;
+    --accent:#3b5bfd;
+    --accent-soft:#e7ebff;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    padding:40px 24px 80px;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Hiragino Sans","Yu Gothic UI",-apple-system,BlinkMacSystemFont,sans-serif;
+    line-height:1.7;
+  }
+  .wrap{max-width:920px;margin:0 auto;}
+  h1{font-size:28px;margin:0 0 4px;}
+  .subtitle{color:var(--sub);font-size:14px;margin-bottom:36px;}
+  h2{
+    font-size:18px;
+    margin:48px 0 16px;
+    padding-bottom:8px;
+    border-bottom:2px solid var(--ink);
+  }
+  h3{font-size:15px;margin:24px 0 10px;color:var(--ink);}
+  p{margin:0 0 12px;}
+  table{width:100%;border-collapse:collapse;margin:12px 0 20px;font-size:14px;}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:center;}
+  th{background:var(--panel);font-weight:600;}
+  .flow-list{counter-reset:step;list-style:none;padding:0;margin:0 0 20px;}
+  .flow-list li{
+    counter-increment:step;
+    position:relative;
+    padding:10px 0 10px 40px;
+    border-bottom:1px dashed var(--line);
+    font-size:14px;
+  }
+  .flow-list li:last-child{border-bottom:none;}
+  .flow-list li::before{
+    content:counter(step);
+    position:absolute;left:0;top:8px;
+    width:24px;height:24px;border-radius:50%;
+    background:var(--ink);color:#fff;
+    font-size:12px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .note-box{
+    background:var(--accent-soft);
+    border-left:4px solid var(--accent);
+    padding:12px 16px;
+    font-size:13.5px;
+    margin:16px 0;
+    border-radius:2px;
+  }
+  code, .mono{
+    font-family:"SF Mono",Menlo,Consolas,monospace;
+    font-size:13px;
+    background:var(--panel);
+    padding:1px 5px;
+    border-radius:3px;
+  }
+  pre{
+    background:var(--panel);
+    padding:14px 16px;
+    border-radius:6px;
+    font-size:13px;
+    overflow-x:auto;
+    font-family:"SF Mono",Menlo,Consolas,monospace;
+    line-height:1.6;
+  }
+  /* --- wireframe styling --- */
+  .frame-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:24px;
+    margin:20px 0 12px;
+  }
+  .frame{
+    border:1.5px solid var(--ink);
+    border-radius:14px;
+    background:#fff;
+    aspect-ratio:9/16;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    position:relative;
+  }
+  .frame-label{
+    text-align:center;
+    font-size:12.5px;
+    font-weight:700;
+    margin:10px 0 6px;
+    color:var(--sub);
+  }
+  .fw-box{
+    border:1.5px dashed var(--line);
+    border-radius:6px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:var(--sub);
+    font-size:11px;
+    text-align:center;
+    padding:4px;
+  }
+  .fw-topbar{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:8px 10px;font-size:10px;color:var(--sub);
+    border-bottom:1px solid var(--line);
+  }
+  .fw-arm{
+    width:20px;height:20px;border:1.5px solid var(--ink);border-radius:50%;
+    font-size:9px;display:flex;align-items:center;justify-content:center;
+  }
+  .fw-body{
+    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:10px;
+  }
+  .fw-title{font-size:16px;font-weight:800;letter-spacing:1px;}
+  .fw-btn{
+    border:1.5px solid var(--ink);border-radius:8px;
+    padding:8px 18px;font-size:11px;font-weight:700;
+  }
+  .fw-btn.primary{background:var(--ink);color:#fff;}
+  .fw-num{
+    width:64px;height:64px;border:2px solid var(--ink);border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;
+  }
+  .fw-choice-row{display:flex;gap:8px;}
+  .fw-choice{
+    width:52px;height:52px;border:1.5px solid var(--ink);border-radius:10px;
+    display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;
+  }
+  .fw-timerbar{
+    width:80%;height:6px;background:var(--panel);border:1px solid var(--line);border-radius:4px;overflow:hidden;
+  }
+  .fw-timerbar::after{content:"";display:block;width:55%;height:100%;background:var(--ink);}
+  .fw-cue{font-size:22px;font-weight:800;letter-spacing:2px;}
+  .fw-result-badge{
+    width:56px;height:56px;border-radius:50%;border:2.5px solid var(--ink);
+    display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;
+  }
+  .fw-small{font-size:10px;color:var(--sub);}
+  /* --- flow layout --- */
+  .flow-row{
+    display:flex;
+    align-items:flex-start;
+    gap:4px;
+    overflow-x:auto;
+    padding:8px 2px 22px;
+  }
+  .flow-step{flex:0 0 148px;}
+  .flow-step .frame{aspect-ratio:9/16;}
+  .flow-step .frame-label{font-size:11px;min-height:28px;display:flex;align-items:center;justify-content:center;}
+  .flow-arrow{
+    flex:0 0 22px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:18px;color:var(--line);
+    padding-top:90px;
+  }
+  .flow-branch{
+    font-size:11px;color:var(--accent);background:var(--accent-soft);
+    border-radius:6px;padding:6px 10px;margin:4px 0 14px;display:inline-block;
+  }
+  footer{margin-top:60px;font-size:12px;color:var(--sub);text-align:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>「せーの！」ゲーム設計書</h1>
+  <div class="subtitle">レストラン待ち時間向け・親指本数当てゲーム / v1.10（AWSインフラ構成を追加）/ 作成日 2026-08-16</div>
+
+  <div class="note-box" style="margin-top:0;">
+    <strong>決定事項サマリー</strong><br>
+    技術スタック：React Native Web（Webアプリとして配布、iPhone Safariのみ動作保証）／MVPスコープ：最小構成（コアループのみ、難易度Normal固定、キャラ1種）／
+    テンポ：カウントダウン各0.5秒×3＋せーの、入力受付0.9秒（合計約3秒）／
+    世界観：シンプルな手・ジェスチャー系（マスコット的キャラは作り込まず、手の演出中心）／
+    対象年齢層：小学校低学年中心（6〜9歳）
+  </div>
+
+  <h2>1. コンセプト</h2>
+  <p>
+    レストランで料理が来るまでの数分〜十数分を、子供が文字なし・音なしでも遊べる短時間対戦ゲームで潰す。
+    プレイヤー（タップ入力）とAIが交互に「合計を予想」しあう、簡易版モラ（Morra）ゲーム。
+    1ラウンドが数秒で終わるテンポ設計で、待ち時間の長さに合わせて何度でも気軽にリトライできることを重視する。
+  </p>
+
+  <table>
+    <tr><th>項目</th><th>内容</th></tr>
+    <tr><td>技術スタック</td><td>React Native Web（同一コードでWeb配布。将来的なネイティブアプリ化の余地も残す）</td></tr>
+    <tr><td>配布形態</td><td>Webアプリ（URLを開くだけで遊べる。App Store配信・審査対応は不要）</td></tr>
+    <tr><td>対応環境</td><td><strong>iPhone Safariのみ</strong>を動作保証対象とする（自分のスマホで使う前提）</td></tr>
+    <tr><td>画面の向き</td><td>縦・横<strong>両対応</strong></td></tr>
+    <tr><td>通信要件</td><td><strong>毎回通信必須</strong>（オフラインPWA化はMVPでは見送り）</td></tr>
+    <tr><td>対象年齢層</td><td><strong>小学校低学年中心（6〜9歳）</strong>。現行のテンポ・タップサイズは実地検証済みでこのまま採用</td></tr>
+  </table>
+
+  <h2>2. 基本ルール</h2>
+  <table>
+    <tr><th>項目</th><th>内容</th></tr>
+    <tr><td>対戦形式</td><td>プレイヤー（タップ操作） vs AI</td></tr>
+    <tr><td>勝敗条件</td><td>各プレイヤーの腕は2本。先に両腕を下げた方（＝コール的中2回）が勝ち</td></tr>
+    <tr><td>出す本数</td><td>0・1・2本の3択（ただし<strong>残り腕の本数が上限</strong>。詳細下記）</td></tr>
+    <tr><td>本数選択の上限</td><td>その回に出せる最大本数＝<strong>そのプレイヤーの残り腕本数</strong>（腕2本→0/1/2が選べる、腕1本→0/1しか選べない）</td></tr>
+    <tr><td>合計の範囲</td><td>0〜4（両者とも腕2本のとき）。どちらかの腕が1本になると、達成可能な合計の上限も自動的に下がる</td></tr>
+    <tr><td>コール担当</td><td>完全ローテーション（自分→AI→自分→AI…毎ラウンド交代）</td></tr>
+    <tr><td>的中判定</td><td>コール数字＝実際の合計 の場合、コール担当が自分の腕を1本下げる</td></tr>
+    <tr><td>入力方式</td><td>「せーの！」の合図後、制限時間内（約0.9秒）に0/1/2をタップ。タップ即・結果表示</td></tr>
+    <tr><td>入力タイムアウト時の挙動</td><td>制限時間内にタップがなければ<strong>自動的に「0本」を出したものとして扱う</strong></td></tr>
+    <tr><td>試合間のルール</td><td>1試合内はコール完全ローテーション。試合が決着したら、<strong>勝者が次の試合の先行（最初のコール担当）</strong>になる</td></tr>
+  </table>
+
+  <h3>1ラウンドの流れ</h3>
+  <ul class="flow-list">
+    <li>コール担当（ローテーションで自動決定）が予想数字を決める。選べる数字は<strong>その時点で両者が出せる最大本数の合計まで</strong>（下記参照）。<strong>自分の番のときだけ</strong>0〜4のボタンをタップして能動的に選択・画面表示する。<strong>AIの番のときはコール数字を一切表示せず</strong>、そのままカウントダウンへ進む（結果表示のタイミングで初めて公開）</li>
+    <li>「3・2・1・せーの！」のカウントダウン演出（音声なし・視覚のみでも成立）</li>
+    <li>制限時間内にプレイヤーが本数をタップ。<strong>自分の残り腕が1本の場合は「2」の選択肢が無効化される</strong>。AIも同様の制約下で本数を決定（詳細は3章）</li>
+    <li>合計を即計算 → コール数字と一致していればコール担当の腕を1本下げる演出</li>
+    <li>自動的に次ラウンドへ、コール担当を交代</li>
+  </ul>
+
+  <h3>合計の出現確率（腕の残り本数に応じて3パターン）</h3>
+  <p>両者が出せる範囲内で均等ランダムに出したと仮定した理論値。腕が減るほど山が低い位置に寄っていく。</p>
+  <table>
+    <tr><th>両者の腕</th><th>出せる本数</th><th>合計0</th><th>合計1</th><th>合計2</th><th>合計3</th><th>合計4</th></tr>
+    <tr><td>2本 vs 2本（通常）</td><td>0-2 vs 0-2</td><td>約11%</td><td>約22%</td><td>約33%</td><td>約22%</td><td>約11%</td></tr>
+    <tr><td>1本 vs 2本</td><td>0-1 vs 0-2</td><td>約17%</td><td>約33%</td><td>約33%</td><td>約17%</td><td>－</td></tr>
+    <tr><td>1本 vs 1本</td><td>0-1 vs 0-1</td><td>約25%</td><td>約50%</td><td>約25%</td><td>－</td><td>－</td></tr>
+  </table>
+  <p class="note-box">
+    どちらかが1勝すると相手との合計レンジが狭まり、コールの選択肢も自動的に減る。先行した側ほど終盤に出せる本数が絞られるため、逃げ切りにくくキャッチアップが効きやすいバランスになる。
+  </p>
+
+  <h2>3. AIの駆け引きロジック</h2>
+  <p>
+    完全ランダムだと数ラウンドで「読めないだけの運ゲー」になってしまうため、直近のプレイヤーの傾向を追跡し、
+    コール時・防御時で異なる戦略を取らせる。プレイヤーが慣れてAIの癖を読み始めると、AI側の予測が外れ始める
+    → プレイヤーがまた傾向を変える、という自然な読み合いのループを狙う。
+  </p>
+
+  <div class="note-box">
+    <strong>公正性の原則（重要な前提）</strong><br>
+    攻撃側・防御側どちらの立場でも、判断材料は「相手の過去の履歴（統計）」のみであり、<strong>その回に相手が実際に何本出すかは、両者とも「せーの」で同時公開されるまで一切分からない</strong>。
+    AIはプレイヤーの実際の入力を覗き見ないし、プレイヤーもAIの実際の本数（内部的に決定済みでも）を事前に見ることはない。
+    これは実装上絶対に守るべき制約で、UI側でも「せーの」の前にAIの実際の手や結果を先出ししてはいけない。
+  </div>
+
+  <h3>3-1. 前提データ</h3>
+  <p><span class="mono">humanHistory</span>：直近8ラウンドでプレイヤーが出した本数（0/1/2）の記録</p>
+  <p><span class="mono">freq[n]</span>：履歴内での本数 n（0,1,2）の出現割合。データが少ないうちは均等（1/3ずつ）扱い</p>
+  <p><span class="mono">maxSelf / maxHuman</span>：AI自身／プレイヤーそれぞれの残り腕本数（＝その回に出せる最大本数、0〜2）</p>
+  <p class="note-box">腕の本数制限を追加したため、以下のロジックは常に <span class="mono">maxSelf</span> と <span class="mono">maxHuman</span> の範囲内でのみ本数・コールを決定する（範囲外の値は候補に含めない）。</p>
+  <p class="note-box"><strong>データのライフサイクル：</strong><span class="mono">humanHistory</span> は連勝カウントと同様に「アプリセッション単位」で保持し、試合が変わっても明示的にはリセットしない（7章参照）。ページを閉じる／再読み込みするとクリアされる。</p>
+
+  <h3>3-2. AIがコール担当のとき（攻撃側）</h3>
+  <p class="note-box">
+    <strong>設計メモ：</strong>4章の変更で、AIのコール数字は「せーの」前には表示されず、結果画面で初めて公開する方式になった。
+    これにより、コール表示からplannedThrowを逆算されるリスクはそもそも発生しなくなった（表示自体がないため）。
+    ただし下記の「70%/30%」の仕組みはセキュリティ目的ではなく、<strong>AIも自分の計画通りにいかないことがある、という人間らしい不確実性の演出</strong>として、そのまま残す方針。
+    防御側（3-3）と同じ「戦略適用率」パラメータを使い回せる利点もある。
+  </p>
+  <pre>1. freq を 0〜maxHuman の範囲だけに絞り、その中で最も出現率が高い本数を predictedHuman とする
+2. AIの「投げるつもりの本数」plannedThrow を、0〜maxSelf の範囲でランダムに仮決定（Hard難易度では意図的に偏らせる）
+3. コール = plannedThrow + predictedHuman（結果は自動的に 0〜(maxSelf+maxHuman) の範囲に収まる）
+4. せーのの瞬間、AIの実際の本数は：
+     Normal難易度：70%の確率で plannedThrow をそのまま出す（コール的中を狙う）
+     残り30%は 0〜maxSelf の範囲で改めてランダムに出し直す（＝自分のコールを外すこともある）</pre>
+  <p>つまりAIは「相手が一番出しがちな本数」に賭けてコールするが、必ずしも計画通りには出さない。コールはUI上せーの前には表示されないため逆算リスクはそもそも無いが、この70%/30%の仕組みは「AIも計画通りにいかないことがある」という人間らしい不確実性の演出として維持している。</p>
+
+  <h3>3-3. プレイヤーがコール担当のとき（AIは防御側）</h3>
+  <pre>1. プレイヤーが宣言したコール数字 call は既に画面表示済み（選択肢自体が 0〜(maxHuman+maxSelf) に制限されている）
+2. AIは x ∈ {0..maxSelf} のうち、freq[call - x] が最小になる x を選ぶ
+   （call - x が 0〜maxHuman の範囲外なら確率0として扱う＝そもそも成立しない組み合わせ）
+3. ただし常に最適解だと機械的すぎるので、
+   Normal難易度では 70%の確率でこのロジックを適用、残り30%は maxSelf 範囲内でのランダム</pre>
+  <p>AIは「プレイヤーが当てにきそうな手」を読んで、あえて外れる本数を選ぶ守備行動を取る。腕が減るほど選べる本数の幅も狭まるため、終盤ほど読み合いがシビアになる。</p>
+
+  <h3>3-4. 難易度パラメータ</h3>
+  <table>
+    <tr><th>難易度</th><th>履歴の参照数</th><th>戦略適用率</th><th>体感</th><th>MVP実装</th></tr>
+    <tr><td>Easy</td><td>参照なし</td><td>0%（常にランダム）</td><td>完全な運ゲー、小さい子向け</td><td>見送り</td></tr>
+    <tr><td>Normal</td><td>直近8ラウンド</td><td>70%</td><td>たまに読まれる／外される絶妙なバランス</td><td><strong>MVPで実装</strong></td></tr>
+    <tr><td>Hard</td><td>直近4ラウンド</td><td>95%</td><td>直近の癖に敏感、パターン化すると即対応される</td><td>見送り</td></tr>
+  </table>
+  <p class="note-box">
+    「戦略適用率」は攻撃側（3-2）・防御側（3-3）の両方に共通のパラメータとして使う。MVPでは難易度選択UIを作らず、Normal相当の駆け引きロジックを固定実装。Easy/Hardおよび自動調整ロジックはMVP検証後の拡張候補。
+  </p>
+
+  <h2>4. 画面ワイヤーフレーム</h2>
+  <p>低精細（ローファイ）ワイヤーフレーム。配色・アイコンは未確定、レイアウトと情報構造の確認用。「AIがオフェンス（＝人間はディフェンス）」「人間がオフェンス（＝AIはディフェンス）」で一連の流れを分けて記載する。せーの・タップ入力・結果表示の画面自体は両パターン共通だが、直前の入り口（コール表示 or コール選択）が違うため、通しで見えるように並べている。</p>
+
+  <h3>4-1. 試合の入り口</h3>
+  <div class="flow-row">
+    <div class="flow-step">
+      <div class="frame-label">① タイトル画面</div>
+      <div class="frame">
+        <div class="fw-body">
+          <div class="fw-box" style="width:70px;height:70px;border-radius:50%;">手のイラスト</div>
+          <div class="fw-title">せーの！</div>
+          <div class="fw-small">親指チャレンジ</div>
+          <div class="fw-btn primary" style="margin-top:14px;">はじめる</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="fw-small" style="margin-top:-8px;">「はじめる」タップ後、1試合目のコール担当を決定（2試合目以降は前の試合の勝者が先行）。ここから毎ラウンド、下記4-2または4-3のどちらかの流れに分岐する。</p>
+
+  <h3>4-2. AIがオフェンス（＝人間はディフェンス）の回</h3>
+  <p class="fw-small" style="margin-top:-4px;">AIのコール数字は事前表示しない方針に変更。コール選択画面（②-B）自体を廃止し、いきなりカウントダウンから始まる。コール内容はAI内部で決定済みだが、結果表示画面で初めて公開する。</p>
+  <div class="flow-row">
+    <div class="flow-step">
+      <div class="frame-label">③ せーのカウントダウン</div>
+      <div class="frame">
+        <div class="fw-topbar">
+          <div class="fw-arm">腕2</div>
+          <div class="fw-small">AIのばん（コール内容は非公開）</div>
+          <div class="fw-arm">腕2</div>
+        </div>
+        <div class="fw-body">
+          <div class="fw-cue">3・2・1</div>
+          <div class="fw-cue" style="font-size:26px;">せーの！</div>
+        </div>
+      </div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="frame-label">④ タップ入力（あなたの防御）</div>
+      <div class="frame">
+        <div class="fw-topbar">
+          <div class="fw-small">のこり時間</div>
+        </div>
+        <div class="fw-body">
+          <div class="fw-timerbar"></div>
+          <div class="fw-small">なんぼん だす？</div>
+          <div class="fw-choice-row">
+            <div class="fw-choice" style="height:56px;flex-direction:column;gap:2px;">
+              <span>✊✊</span><span style="font-size:8px;">0本</span>
+            </div>
+            <div class="fw-choice" style="height:56px;flex-direction:column;gap:2px;">
+              <span>✊👍</span><span style="font-size:8px;">1本</span>
+            </div>
+            <div class="fw-choice" style="height:56px;flex-direction:column;gap:2px;">
+              <span>👍👍</span><span style="font-size:8px;">2本</span>
+            </div>
+          </div>
+          <div class="fw-small" style="color:var(--accent);">※ AIのコール数字も実際の本数もまだ見えない。完全に手探りでタップ／最初の1タップのみ受付、連打は無視</div>
+        </div>
+      </div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="frame-label">⑤ 結果表示</div>
+      <div class="frame">
+        <div class="fw-topbar">
+          <div class="fw-arm">腕2</div>
+          <div class="fw-small">結果</div>
+          <div class="fw-arm">腕2</div>
+        </div>
+        <div class="fw-body">
+          <div class="fw-small">AIのコールは <strong>2</strong> だった</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="text-align:center;">
+              <div class="fw-small">あなた</div>
+              <div style="font-size:18px;">✊👍</div>
+            </div>
+            <div class="fw-small">＋</div>
+            <div style="text-align:center;">
+              <div class="fw-small">AI</div>
+              <div style="font-size:18px;">✊✊</div>
+            </div>
+          </div>
+          <div class="fw-num" style="width:44px;height:44px;font-size:16px;">＝1</div>
+          <div class="fw-result-badge" style="width:44px;height:44px;font-size:18px;">✕</div>
+          <div class="fw-small">コールと不一致！AIの腕は変わらず</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="flow-branch">腕1本の場合：④は「④' タップ入力（腕1本）」に差し替わり選択肢が0/1だけになる（4-4参照）</div>
+
+  <h3>4-3. 人間がオフェンス（＝AIはディフェンス）の回</h3>
+  <div class="flow-row">
+    <div class="flow-step">
+      <div class="frame-label">②-A コール選択（あなたの番）</div>
+      <div class="frame">
+        <div class="fw-topbar">
+          <div class="fw-arm">腕2</div>
+          <div class="fw-small">あなたが コール</div>
+          <div class="fw-arm">腕2</div>
+        </div>
+        <div class="fw-body">
+          <div class="fw-small">ごうけいを よそくして タップ</div>
+          <div class="fw-choice-row" style="flex-wrap:wrap;justify-content:center;gap:5px;">
+            <div class="fw-choice" style="width:30px;height:30px;font-size:11px;">0</div>
+            <div class="fw-choice" style="width:30px;height:30px;font-size:11px;">1</div>
+            <div class="fw-choice" style="width:30px;height:30px;font-size:11px;background:var(--accent-soft);border-color:var(--accent);">2</div>
+            <div class="fw-choice" style="width:30px;height:30px;font-size:11px;">3</div>
+            <div class="fw-choice" style="width:30px;height:30px;font-size:11px;">4</div>
+          </div>
+          <div class="fw-small" style="color:var(--accent);">※ 自分でタップして能動的に選択</div>
+        </div>
+      </div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="frame-label">③ せーのカウントダウン</div>
+      <div class="frame">
+        <div class="fw-topbar">
+          <div class="fw-arm">腕2</div>
+          <div class="fw-small">たいせん中</div>
+          <div class="fw-arm">腕2</div>
+        </div>
+        <div class="fw-body">
+          <div class="fw-cue">3・2・1</div>
+          <div class="fw-cue" style="font-size:26px;">せーの！</div>
+        </div>
+      </div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="frame-label">④ タップ入力（あなたの攻撃）</div>
+      <div class="frame">
+        <div class="fw-topbar">
+          <div class="fw-small">のこり時間</div>
+        </div>
+        <div class="fw-body">
+          <div class="fw-timerbar"></div>
+          <div class="fw-small">なんぼん だす？</div>
+          <div class="fw-choice-row">
+            <div class="fw-choice" style="height:56px;flex-direction:column;gap:2px;">
+              <span>✊✊</span><span style="font-size:8px;">0本</span>
+            </div>
+            <div class="fw-choice" style="height:56px;flex-direction:column;gap:2px;background:var(--accent-soft);border-color:var(--accent);">
+              <span>✊👍</span><span style="font-size:8px;">1本</span>
+            </div>
+            <div class="fw-choice" style="height:56px;flex-direction:column;gap:2px;">
+              <span>👍👍</span><span style="font-size:8px;">2本</span>
+            </div>
+          </div>
+          <div class="fw-small" style="color:var(--accent);">※ AIの実際の本数は見えない。自分のコール「2」が当たるように賭ける／最初の1タップのみ受付、連打は無視</div>
+        </div>
+      </div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="frame-label">⑤ 結果表示</div>
+      <div class="frame">
+        <div class="fw-topbar">
+          <div class="fw-arm">腕1</div>
+          <div class="fw-small">結果</div>
+          <div class="fw-arm">腕2</div>
+        </div>
+        <div class="fw-body">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="text-align:center;">
+              <div class="fw-small">あなた</div>
+              <div style="font-size:18px;">✊👍</div>
+            </div>
+            <div class="fw-small">＋</div>
+            <div style="text-align:center;">
+              <div class="fw-small">AI</div>
+              <div style="font-size:18px;">✊👍</div>
+            </div>
+          </div>
+          <div class="fw-num" style="width:44px;height:44px;font-size:16px;">＝2</div>
+          <div class="fw-result-badge" style="width:44px;height:44px;font-size:18px;">○</div>
+          <div class="fw-small">コール的中！あなたの腕が1本下がった</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="flow-branch">腕1本の場合：②-Aは「②-A' コール選択（腕1本）」に差し替わり選択肢の上限が下がる／④も「④'」になる（4-4参照）</div>
+
+  <h3>4-4. 共通：腕が1本になったときの差分画面</h3>
+  <div class="flow-row">
+    <div class="flow-step">
+      <div class="frame-label">②-A' コール選択（腕1本）</div>
+      <div class="frame">
+        <div class="fw-topbar">
+          <div class="fw-arm">腕1</div>
+          <div class="fw-small">あなたが コール</div>
+          <div class="fw-arm">腕2</div>
+        </div>
+        <div class="fw-body">
+          <div class="fw-small">ごうけいを よそくして タップ</div>
+          <div class="fw-choice-row" style="flex-wrap:wrap;justify-content:center;gap:5px;">
+            <div class="fw-choice" style="width:30px;height:30px;font-size:11px;">0</div>
+            <div class="fw-choice" style="width:30px;height:30px;font-size:11px;background:var(--accent-soft);border-color:var(--accent);">1</div>
+            <div class="fw-choice" style="width:30px;height:30px;font-size:11px;">2</div>
+            <div class="fw-choice" style="width:30px;height:30px;font-size:9px;opacity:.3;border-style:dashed;">3</div>
+            <div class="fw-choice" style="width:30px;height:30px;font-size:9px;opacity:.3;border-style:dashed;">4</div>
+          </div>
+          <div class="fw-small" style="color:var(--accent);">※ 自分の最大1＋相手の最大2＝上限3。「3」「4」は選択不可</div>
+        </div>
+      </div>
+    </div>
+    <div class="flow-arrow">≈</div>
+    <div class="flow-step">
+      <div class="frame-label">④' タップ入力（腕1本）</div>
+      <div class="frame">
+        <div class="fw-topbar">
+          <div class="fw-arm">腕1</div>
+          <div class="fw-small">のこり時間</div>
+          <div class="fw-arm">腕2</div>
+        </div>
+        <div class="fw-body">
+          <div class="fw-timerbar"></div>
+          <div class="fw-small">うでが1本なので手も1個</div>
+          <div class="fw-choice-row">
+            <div class="fw-choice" style="height:56px;flex-direction:column;gap:2px;">
+              <span style="font-size:16px;">✊</span><span style="font-size:8px;">0本</span>
+            </div>
+            <div class="fw-choice" style="height:56px;flex-direction:column;gap:2px;">
+              <span style="font-size:16px;">👍</span><span style="font-size:8px;">1本</span>
+            </div>
+          </div>
+          <div class="fw-small" style="color:var(--accent);">※ 手のアイコン数＝残り腕本数。選択肢も0/1のみ</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>4-5. 試合終了</h3>
+  <div class="flow-row">
+    <div class="flow-step">
+      <div class="frame-label">⑥ 勝敗画面</div>
+      <div class="frame">
+        <div class="fw-body">
+          <div class="fw-box" style="width:60px;height:60px;border-radius:50%;">手のイラスト<br>（ガッツポーズ）</div>
+          <div class="fw-title" style="font-size:16px;">あなたの　かち！</div>
+          <div class="fw-box" style="width:90%;padding:6px;font-size:9px;">
+            🔥 3れんしょう中
+            <div style="font-size:7px;color:var(--sub);">※一時カウント（MVP実装）</div>
+          </div>
+          <div class="fw-small">つぎの せんこう：あなた</div>
+          <div class="fw-btn primary">もういちど</div>
+          <div class="fw-btn">タイトルへ</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="fw-small" style="margin-top:-8px;">「もういちど」タップで新しい試合を開始する際は、両者の腕を2本にリセットする（連勝カウント・humanHistoryはリセットしない、7章参照）。</p>
+
+  <h3>4-6. 中断時の挙動</h3>
+  <p class="note-box">
+    タイマー作動中（カウントダウン・0.9秒の入力受付中）にブラウザがバックグラウンドに回った場合（タブ切り替え・他アプリ切り替え・画面ロックなど）、<strong>その時点で試合を中断し、復帰時はタイトル画面に戻す</strong>。進行中のラウンド・試合の状態は破棄する（連勝カウント・humanHistoryなどのセッション状態は保持、7章参照）。
+  </p>
+
+  <h2>5. 決定済み事項</h2>
+  <table>
+    <tr><th>論点</th><th>決定内容</th></tr>
+    <tr><td>技術スタック</td><td>React Native Web（同一コードでWeb配布、将来ネイティブアプリ化も可能な構成）</td></tr>
+    <tr><td>配布形態</td><td>Webアプリ（URLを開くだけで遊べる。App Store配信・審査対応は不要）</td></tr>
+    <tr><td>対応環境</td><td>iPhone Safariのみを動作保証対象とする（自分のスマホで使う前提）</td></tr>
+    <tr><td>画面の向き</td><td>縦・横両対応</td></tr>
+    <tr><td>通信要件</td><td>毎回通信必須（オフラインPWA化はMVPでは見送り）</td></tr>
+    <tr><td>対象年齢層</td><td>小学校低学年中心（6〜9歳）</td></tr>
+    <tr><td>MVPスコープ</td><td>最小構成（コアループのみ／難易度Normal固定／キャラ1種／保存データなし）</td></tr>
+    <tr><td>テンポ</td><td>カウントダウン各0.5秒×3＋せーの、入力受付0.9秒（合計約3秒）。実際に子供と遊んで駆け引きが成立することを確認済みのため、<strong>この初期値のまま採用</strong>（追加調整なし）</td></tr>
+    <tr><td>腕1本時の駆け引き難易度</td><td>実際に子供と一緒に遊んで駆け引きが成立することを確認済み。<strong>問題なし、追加調整不要</strong></td></tr>
+    <tr><td>入力タイムアウト時の挙動</td><td>制限時間内にタップがなければ<strong>自動的に「0本」扱い</strong>（2章参照）</td></tr>
+    <tr><td>連打・誤タップ対策</td><td>1ラウンド中は<strong>最初の1タップのみ受付</strong>、以降のタップは無視する</td></tr>
+    <tr><td>ゲームタイトル</td><td><strong>「せーの！」</strong>に確定</td></tr>
+    <tr><td>世界観</td><td>シンプルな手・ジェスチャー系（マスコットキャラは作り込まない）</td></tr>
+    <tr><td>試合間ルール</td><td>試合の勝者が次の試合の先行（最初のコール担当）になる。試合開始時に両者の腕は2本にリセット</td></tr>
+    <tr><td>中断時の挙動</td><td>タイマー作動中にバックグラウンドへ遷移した時点で試合を中断し、復帰時はタイトル画面に戻す（4-6章参照）</td></tr>
+    <tr><td>UI表現</td><td>本数選択・結果表示は「手」アイコンで視覚化。<strong>表示する手の個数＝そのプレイヤーの残り腕本数</strong>（腕2本→手2個で0本=✊✊／1本=✊👍／2本=👍👍、腕1本→手1個で0本=✊／1本=👍）</td></tr>
+    <tr><td>バイブレーション</td><td>触覚フィードバックは<strong>MVPでは入れない</strong>（見送り）</td></tr>
+    <tr><td>アクセシビリティ（結果バッジ）</td><td>的中○／不一致✕は記号の形状自体が異なるため色のみに依存しない。<strong>現状のままで対応済みと確認</strong></td></tr>
+    <tr><td>セッション状態</td><td>連勝カウント・<span class="mono">humanHistory</span>は<strong>アプリセッション単位</strong>で保持し、試合が変わっても明示的にはリセットしない（ページの再読み込み・タブを閉じるとクリア）。10戦中何勝の永続戦績はMVP後の拡張へ</td></tr>
+    <tr><td>本数選択の制限</td><td><strong>入れる</strong>。出せる最大本数＝残り腕本数（2本→0/1/2、1本→0/1）。腕が減るほどコールの選択肢・確率分布も自動的に狭まる（2章参照）</td></tr>
+    <tr><td>AIコールの事前表示</td><td><strong>表示しない</strong>に変更。AIがオフェンスのときはコール選択画面（②-B）を廃止し、いきなりカウントダウンへ。コール内容は結果表示画面で初めて公開する</td></tr>
+    <tr><td>インフラ構成</td><td>S3 + CloudFront（独自ドメインなし）。詳細は6章参照</td></tr>
+  </table>
+
+  <h2>6. AWSインフラ構成</h2>
+  <p>バックエンド不要（認証なし・DB無し・AIロジックは全てクライアントサイドJS）のため、S3 + CloudFrontによる静的サイトホスティング構成とする。</p>
+  <pre>[ブラウザ (iPhone Safari)]
+        │ HTTPS
+        ▼
+   CloudFront（CDN配信、HTTPS終端、キャッシュ）
+        │ OAC (Origin Access Control)
+        ▼
+   S3（静的ファイル配置、パブリックアクセス完全ブロック）
+
+CI/CD:
+GitHub Actions → OIDC federation → IAM Role（長期アクセスキーなし）
+   → S3への同期 + CloudFrontキャッシュ無効化</pre>
+  <table>
+    <tr><th>項目</th><th>内容</th></tr>
+    <tr><td>ホスティング</td><td>S3（静的ファイル配置、ブロックパブリックアクセスON） + CloudFront（CDN配信、HTTPS終端）</td></tr>
+    <tr><td>S3アクセス制御</td><td>CloudFrontからのみ<strong>OAC（Origin Access Control）</strong>経由でアクセス許可。S3への直接アクセスは不可</td></tr>
+    <tr><td>独自ドメイン</td><td><strong>使わない</strong>。CloudFrontのデフォルトドメイン（<span class="mono">*.cloudfront.net</span>）で運用する（Route53・ACMは不要）</td></tr>
+    <tr><td>CI/CD</td><td>GitHub Actions → <strong>OIDC federation</strong>でIAM Roleを引き受け（長期アクセスキーは持たない） → S3への同期 + CloudFrontキャッシュ無効化</td></tr>
+    <tr><td>想定コスト</td><td>独自ドメインなしのため<strong>実質$0/月</strong>（S3ストレージ・リクエストはごく僅か、CloudFrontはデータ転送1TB/月・リクエスト1,000万件/月の無料枠内に収まる想定）</td></tr>
+  </table>
+
+  <h2>7. 次に詰めるべき論点</h2>
+  <ul class="flow-list">
+    <li>Easy/Hard難易度・10戦戦績など、MVP後の拡張ロードマップ（今後あらためて話す）</li>
+  </ul>
+
+  <footer>「せーの！」ゲーム設計書 — 個人アプリ開発用ドラフト</footer>
+</div>
+</body>
+</html>
