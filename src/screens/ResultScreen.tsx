@@ -26,11 +26,9 @@ export function ResultScreen({ playerArms, aiArms, round }: Props) {
     <View style={styles.container}>
       <TopBar playerArms={playerArms} aiArms={aiArms} centerLabel="結果" />
       <View style={styles.body}>
-        {!callerIsPlayer && (
-          <Text style={styles.reveal}>
-            AIのコールは <Text style={styles.revealNum}>{call}</Text> だった
-          </Text>
-        )}
+        <Text style={styles.reveal}>
+          {callerIsPlayer ? 'あなたのコールは' : 'AIのコールは'} <Text style={styles.revealNum}>{call}</Text> だった
+        </Text>
         <View style={styles.hands}>
           <View style={styles.handCol}>
             <Text style={styles.handLabel}>あなた</Text>
