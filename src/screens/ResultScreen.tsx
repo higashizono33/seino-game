@@ -16,13 +16,18 @@ interface Props {
 export function ResultScreen({ playerArms, aiArms, round, onNext }: Props) {
   const { call, callerIsPlayer, playerThrow, aiThrow, sum, hit, playerArmsBefore, aiArmsBefore } = round;
 
+  // A hit advances whoever made the call; a miss advances nobody. So a round is
+  // good news for the player exactly when the caller's outcome matches who called:
+  // the player hit their own call, or the AI whiffed on its call.
+  const favorableToPlayer = hit === callerIsPlayer;
+
   const message = hit
     ? callerIsPlayer
       ? 'コール的中！あなたの腕が1本下がった'
-      : 'コール的中！AIの腕が1本下がった'
+      : 'コール的中…AIの腕が1本下がった'
     : callerIsPlayer
-      ? 'コールと不一致！あなたの腕は変わらず'
-      : 'コールと不一致！AIの腕は変わらず';
+      ? 'コールと不一致…あなたの腕はそのまま'
+      : 'ラッキー！AIのコールがハズレた（AIの腕はそのまま）';
 
   return (
     <View style={styles.container}>
@@ -43,12 +48,12 @@ export function ResultScreen({ playerArms, aiArms, round, onNext }: Props) {
           </View>
         </View>
         <Text style={styles.sum}>＝{sum}</Text>
-        <View style={[styles.badge, hit ? styles.badgeHit : styles.badgeMiss]}>
-          <Text style={[styles.badgeText, hit ? styles.badgeTextHit : styles.badgeTextMiss]}>
+        <View style={[styles.badge, favorableToPlayer ? styles.badgeGood : styles.badgeBad]}>
+          <Text style={[styles.badgeText, favorableToPlayer ? styles.badgeTextGood : styles.badgeTextBad]}>
             {hit ? '○' : '✕'}
           </Text>
         </View>
-        <Text style={styles.message}>{message}</Text>
+        <Text style={[styles.message, favorableToPlayer ? styles.messageGood : styles.messageBad]}>{message}</Text>
         <View style={styles.nextButton}>
           <PrimaryButton label="つぎへ！" onPress={onNext} />
         </View>
@@ -108,26 +113,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  badgeHit: {
+  badgeGood: {
     borderColor: colors.hit,
   },
-  badgeMiss: {
+  badgeBad: {
     borderColor: colors.miss,
   },
   badgeText: {
     fontSize: 24,
     fontWeight: '800',
   },
-  badgeTextHit: {
+  badgeTextGood: {
     color: colors.hit,
   },
-  badgeTextMiss: {
+  badgeTextBad: {
     color: colors.miss,
   },
   message: {
     fontSize: 13,
-    color: colors.sub,
+    fontWeight: '700',
     textAlign: 'center',
+  },
+  messageGood: {
+    color: colors.hit,
+  },
+  messageBad: {
+    color: colors.miss,
   },
   nextButton: {
     marginTop: 8,
